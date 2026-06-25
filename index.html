@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartas Contra a Humanidade</title>
+    <meta name="description" content="Jogue Cartas Contra a Humanidade online com seus amigos. Totalmente em português!">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- PeerJS -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Notificações Toast -->
+    <div id="toast-container"></div>
+
+    <!-- Tela Inicial -->
+    <section id="screen-home" class="screen active">
+        <div class="container center-content">
+            <h1 class="logo">
+                <span class="logo-white">Cartas</span>
+                <span class="logo-black">Contra a</span>
+                <span class="logo-white">Humanidade</span>
+            </h1>
+            <p class="subtitle">Um jogo de festa para pessoas horríveis.</p>
+            
+            <div class="actions">
+                <button id="btn-show-create" class="btn btn-primary btn-large">Criar Sala</button>
+                <button id="btn-show-join" class="btn btn-secondary btn-large">Entrar na Sala</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tela de Criação de Sala -->
+    <section id="screen-create" class="screen">
+        <div class="container">
+            <header class="screen-header">
+                <button class="btn-icon btn-back" data-target="screen-home">⬅ Voltar</button>
+                <h2>Criar Sala</h2>
+            </header>
+            
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="room-name">Nome da Sala</label>
+                    <input type="text" id="room-name" placeholder="Ex: Sala dos Horrores" maxlength="30">
+                </div>
+                
+                <div class="form-group">
+                    <label for="room-password">Senha (Opcional)</label>
+                    <input type="text" id="room-password" placeholder="Deixe em branco para sala sem senha">
+                </div>
+                
+                <div class="form-group row-group">
+                    <div class="col">
+                        <label for="max-score">Pontos para Vencer</label>
+                        <input type="number" id="max-score" value="7" min="3" max="20">
+                    </div>
+                    <div class="col">
+                        <label for="max-players">Máx. Jogadores</label>
+                        <input type="number" id="max-players" value="10" min="3" max="20">
+                    </div>
+                </div>
+
+                <div class="form-group expansions-group">
+                    <label>Expansões <span id="selected-packs-count">(1 selecionada)</span></label>
+                    <div class="expansions-actions">
+                        <button id="btn-select-all" class="btn btn-small">Selecionar Todas</button>
+                        <button id="btn-select-none" class="btn btn-small">Nenhuma</button>
+                    </div>
+                    <div id="expansions-list" class="expansions-list">
+                        <!-- Carregado via JS -->
+                        <div class="loading-packs">Carregando expansões...</div>
+                    </div>
+                </div>
+                
+                <button id="btn-create-room" class="btn btn-primary btn-block">Criar e Ir para o Lobby</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tela de Entrada na Sala -->
+    <section id="screen-join" class="screen">
+        <div class="container">
+            <header class="screen-header">
+                <button class="btn-icon btn-back" data-target="screen-home">⬅ Voltar</button>
+                <h2>Entrar na Sala</h2>
+            </header>
+            
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="player-name">Seu Nome</label>
+                    <input type="text" id="player-name" placeholder="Como devemos te chamar?" maxlength="20">
+                </div>
+
+                <div class="form-group">
+                    <label for="join-room-id">Código da Sala</label>
+                    <input type="text" id="join-room-id" placeholder="Ex: ABCDEF" style="text-transform: uppercase;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="join-room-password">Senha (se houver)</label>
+                    <input type="text" id="join-room-password" placeholder="Digite a senha">
+                </div>
+                
+                <button id="btn-join-room" class="btn btn-primary btn-block">Conectar</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tela de Lobby -->
+    <section id="screen-lobby" class="screen">
+        <div class="container">
+            <header class="screen-header">
+                <button id="btn-leave-lobby" class="btn-icon btn-back">⬅ Sair</button>
+                <h2 id="lobby-room-name">Lobby</h2>
+            </header>
+            
+            <div class="lobby-content">
+                <div class="room-info-card">
+                    <h3>Código da Sala</h3>
+                    <div class="room-code-display">
+                        <span id="lobby-room-id" class="code">------</span>
+                        <button id="btn-copy-code" class="btn-icon" title="Copiar código">📋</button>
+                    </div>
+                    <p class="room-status">Esperando jogadores...</p>
+                </div>
+                
+                <div class="players-list-container">
+                    <h3>Jogadores (<span id="lobby-players-count">1</span>/<span id="lobby-max-players">10</span>)</h3>
+                    <ul id="lobby-players-list" class="players-list">
+                        <!-- Jogadores adicionados via JS -->
+                    </ul>
+                </div>
+                
+                <div class="lobby-actions">
+                    <button id="btn-start-game" class="btn btn-primary btn-block" style="display: none;">Iniciar Jogo</button>
+                    <p id="waiting-host-msg">Aguardando o host iniciar o jogo...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tela do Jogo Principal -->
+    <section id="screen-game" class="screen">
+        <div class="game-layout">
+            <!-- Sidebar / Header (Mobile) -->
+            <aside class="game-sidebar">
+                <div class="sidebar-header">
+                    <h2>Placar</h2>
+                    <span class="target-score">Meta: <span id="game-target-score">7</span></span>
+                </div>
+                <ul id="game-players-list" class="game-players">
+                    <!-- Lista de jogadores e pontuações -->
+                </ul>
+            </aside>
+            
+            <!-- Área Principal do Jogo -->
+            <main class="game-board">
+                <div class="game-status-bar">
+                    <p id="game-status-text">O Czar está lendo a carta...</p>
+                </div>
+
+                <div class="board-top">
+                    <div class="black-card-zone">
+                        <!-- Carta preta atual -->
+                        <div id="current-black-card" class="card black-card">
+                            <div class="card-content"></div>
+                            <div class="card-footer">
+                                <span class="cah-logo">CAH</span>
+                                <span class="pick-indicator"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="played-cards-zone">
+                        <h3 id="played-cards-title">Cartas Jogadas</h3>
+                        <div id="played-cards-container" class="cards-grid">
+                            <!-- Cartas jogadas aparecerão aqui -->
+                        </div>
+                        <button id="btn-confirm-pick" class="btn btn-primary" style="display: none;">Confirmar Escolha</button>
+                    </div>
+                </div>
+                
+                <div class="board-bottom">
+                    <div class="hand-header">
+                        <h3>Sua Mão</h3>
+                        <p id="hand-instructions">Escolha 1 carta para jogar</p>
+                    </div>
+                    <div id="player-hand" class="cards-row">
+                        <!-- Cartas brancas na mão do jogador -->
+                    </div>
+                    <div class="hand-actions">
+                        <button id="btn-play-cards" class="btn btn-primary" disabled>Jogar Cartas Selecionadas</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </section>
+
+    <!-- Tela de Resultados (Fim de Jogo) -->
+    <section id="screen-results" class="screen">
+        <div class="container center-content">
+            <h1 class="winner-title">Fim de Jogo!</h1>
+            <div class="winner-display">
+                <h2 id="winner-name">Jogador</h2>
+                <p>venceu com <span id="winner-score">7</span> Pontos de Incrível!</p>
+            </div>
+            
+            <div class="final-scores">
+                <h3>Placar Final</h3>
+                <ul id="final-scoreboard" class="players-list">
+                    <!-- Placar preenchido via JS -->
+                </ul>
+            </div>
+            
+            <div class="actions mt-4">
+                <button id="btn-back-to-lobby" class="btn btn-primary">Voltar ao Lobby</button>
+                <button id="btn-quit-game" class="btn btn-secondary">Sair do Jogo</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scripts -->
+    <script src="js/cards.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/network.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
