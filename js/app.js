@@ -105,14 +105,23 @@ function setupCreateRoom() {
             document.getElementById('btn-start-game').style.display = 'block';
             document.getElementById('waiting-host-msg').style.display = 'none';
             
-            // Gerar QR Code
-            const joinUrl = window.location.origin + window.location.pathname + '?room=' + roomId;
-            document.getElementById('qrcode-container').innerHTML = '';
-            new QRCode(document.getElementById('qrcode-container'), {
-                text: joinUrl,
-                width: 150,
-                height: 150
-            });
+            // Gerar QR Code (com try..catch caso o CDN seja bloqueado por AdBlock)
+            try {
+                const joinUrl = window.location.origin + window.location.pathname + '?room=' + roomId;
+                const qrContainer = document.getElementById('qrcode-container');
+                if (qrContainer) {
+                    qrContainer.innerHTML = '';
+                    if (typeof QRCode !== 'undefined') {
+                        new QRCode(qrContainer, {
+                            text: joinUrl,
+                            width: 150,
+                            height: 150
+                        });
+                    }
+                }
+            } catch (e) {
+                console.warn("Não foi possível gerar o QR Code:", e);
+            }
             
             // Adicionar host no jogo oficial (vai disparar o updateLobbyPlayers internamente)
             CAHGame.addHostToGame();
