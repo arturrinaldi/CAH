@@ -114,7 +114,9 @@ function setupCreateRoom() {
                 height: 150
             });
             
-            CAHUI.updateLobbyPlayers([{ id: CAHNetwork.peerId, name: playerName, isHost: true }]);
+            // Adicionar host no jogo oficial (vai disparar o updateLobbyPlayers internamente)
+            CAHGame.addHostToGame();
+            
             showScreen('screen-lobby');
             CAHUI.showToast("Sala criada com sucesso!");
         }).catch(err => {

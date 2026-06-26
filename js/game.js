@@ -314,31 +314,22 @@ const CAHGame = (function() {
         onGameOver(payload.winnerName, payload.winnerScore, payload.scoreboard);
     }
 
-    // --- CLIENT LOGIC (Also runs on Host for UI updates) ---
-
     // The Host will explicitly push itself into players array on create room
-    // and trigger its own LOBBY_UPDATE locally.
+    // and trigger its own LOBBY_UPDATE locally via addHostToGame.
     // For joining clients, they need to wait for LOBBY_UPDATE from network.js.
-
-    // Allow overriding from app.js (to handle first hookup). 
-    // We do it by letting app call host initialization and pushing the first player.
-    document.addEventListener('DOMContentLoaded', () => {
-        // Intercept host creation
-        const btnCreate = document.getElementById('btn-create-room');
-        const oldCreate = btnCreate.onclick; // If any
-        btnCreate.addEventListener('click', () => {
-            if(CAH.state.isHost) {
-                hostState.players.push({
-                    id: CAHNetwork.peerId,
-                    name: CAH.state.playerName,
-                    score: 0,
-                    hand: [],
-                    isHost: true
-                });
-                // broadcastLobby(); called by app.js essentially
-            }
-        });
-    });
+    
+    function addHostToGame() {
+        if(isHost()) {
+            hostState.players.push({
+                id: CAHNetwork.peerId,
+                name: CAH.state.playerName,
+                score: 0,
+                hand: [],
+                isHost: true
+            });
+            broadcastLobby();
+        }
+    }
     
     // Override standard PeerJS connection metadata hook
     const originalInitHost = CAHNetwork.initHost;
@@ -508,6 +499,7 @@ const CAHGame = (function() {
         onHandUpdate,
         onRoundWinner,
         onGameOver,
+        addHostToGame,
         playCards,
         czarSelects,
         isCzar: () => clientState.czarId === myId(),
