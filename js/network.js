@@ -129,6 +129,11 @@ const CAHNetwork = (function() {
                     CAHGame.onCzarPick(payload.winnerId);
                 }
                 break;
+            case 'EU_NUNCA':
+                if (CAHGame.onEuNuncaTrade) {
+                    CAHGame.onEuNuncaTrade(clientId, payload.cardIndex);
+                }
+                break;
         }
     }
 
@@ -173,6 +178,9 @@ const CAHNetwork = (function() {
                 if (CAHGame.onGameOver) {
                     CAHGame.onGameOver(payload.winnerName, payload.winnerScore, payload.scoreboard);
                 }
+                break;
+            case 'SHAME_MSG':
+                CAHUI.showToast(payload.msg, "error");
                 break;
         }
     }

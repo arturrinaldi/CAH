@@ -94,9 +94,8 @@ const CAHGame = (function() {
     document.getElementById('btn-start-game').addEventListener('click', async () => {
         if (!isHost()) return;
         
-        if (hostState.players.length < 2) {
-            // Normally min 3 for CAH, but 2 for testing
-            CAHUI.showToast("Precisa de pelo menos 2 jogadores!", "error");
+        if (hostState.players.length < 3) {
+            CAHUI.showToast("Precisa de pelo menos 3 jogadores!", "error");
             return;
         }
 
@@ -148,6 +147,15 @@ const CAHGame = (function() {
             hostState.discardBlack = [];
         }
         hostState.currentBlackCard = hostState.deckBlack.pop();
+        
+        // Regra: Calor de embalagem (1 carta extra se for pick 2 ou 3)
+        if (CAH.state.room.rules.embalagem && hostState.currentBlackCard.pick > 1) {
+            hostState.players.forEach(p => {
+                if (p.id !== hostState.players[hostState.czarIndex].id) {
+                    dealCardsTo(p, 1);
+                }
+            });
+        }
         
         // Send hands
         hostState.players.forEach(p => {
@@ -226,6 +234,27 @@ const CAHGame = (function() {
         // Check if everyone submitted
         const expectedSubmissions = hostState.players.length - 1; // excluding Czar
         if (hostState.submissions.length >= expectedSubmissions) {
+            
+            // Regra: Rando Cardrissian
+            if (CAH.state.room.rules.rando) {
+                const randoCards = [];
+                for(let i=0; i<hostState.currentBlackCard.pick; i++) {
+                    if (hostState.deckWhite.length === 0) {
+                        hostState.deckWhite = CAHCards.shuffleArray([...hostState.discardWhite]);
+                        hostState.discardWhite = [];
+                    }
+                    if (hostState.deckWhite.length > 0) {
+                        randoCards.push(hostState.deckWhite.pop());
+                    }
+                }
+                if (randoCards.length > 0) {
+                    hostState.submissions.push({
+                        playerId: 'RANDO',
+                        cards: randoCards
+                    });
+                }
+            }
+            
             hostState.phase = 'reveal';
         }
 
@@ -238,7 +267,9 @@ const CAHGame = (function() {
         const winner = hostState.players.find(p => p.id === winnerId);
         const winningSub = hostState.submissions.find(s => s.playerId === winnerId);
         
-        if (winner) {
+        if (winnerId === 'RANDO') {
+            CAHNetwork.broadcast('SHAME_MSG', { msg: "Rando Cardrissian ganhou a rodada! Todos vão para casa com vergonha eterna." });
+        } else if (winner) {
             winner.score += 1;
         }
 
@@ -352,12 +383,18 @@ const CAHGame = (function() {
             if (amICzar) {
                 statusEl.textContent = "Você é o Czar! Aguarde os outros jogadores...";
                 document.getElementById('hand-instructions').textContent = "Você é o Czar. Apenas observe as cartas na mesa.";
+                document.getElementById('btn-eu-nunca').style.display = 'none';
             } else {
                 if (playersWhoPlayed.includes(myId())) {
                     statusEl.textContent = `Aguardando outros jogadores...`;
                     document.getElementById('hand-instructions').textContent = "Cartas jogadas!";
+                    document.getElementById('btn-eu-nunca').style.display = 'none';
                 } else {
                     statusEl.textContent = `Sua vez! Jogue ${clientState.currentBlackCard.pick} carta(s).`;
+                    // Regra: Eu Nunca
+                    if (CAH.state.room && CAH.state.room.rules && CAH.state.room.rules.euNunca) {
+                        document.getElementById('btn-eu-nunca').style.display = 'block';
+                    }
                 }
             }
         } else if (clientState.phase === 'reveal') {
@@ -385,6 +422,37 @@ const CAHGame = (function() {
         } else {
             CAHNetwork.sendToHost('PLAY_CARDS', { cards: cardIndices });
         }
+    }
+    
+    function euNuncaTrade(cardIndex) {
+        if (isHost()) {
+            onEuNuncaTrade(myId(), cardIndex);
+        } else {
+            CAHNetwork.sendToHost('EU_NUNCA', { cardIndex });
+        }
+    }
+    
+    function onEuNuncaTrade(playerId, cardIndex) {
+        if (!isHost() || hostState.phase !== 'play') return;
+        const player = hostState.players.find(p => p.id === playerId);
+        if (!player || player.id === hostState.players[hostState.czarIndex].id) return;
+        
+        // Remove carta
+        const discarded = player.hand.splice(cardIndex, 1)[0];
+        hostState.discardWhite.push(discarded);
+        
+        // Dá nova
+        dealCardsTo(player, 1);
+        
+        // Atualiza a mão do cara
+        if (playerId === myId()) {
+            onHandUpdate(player.hand);
+        } else {
+            CAHNetwork.sendTo(playerId, 'HAND_UPDATE', { cards: player.hand });
+        }
+        
+        // Anuncia vergonha
+        CAHNetwork.broadcast('SHAME_MSG', { msg: `${player.name} não entendeu uma carta e confessou sua ignorância usando o "Eu Nunca"!` });
     }
 
     function czarSelects(winnerId) {

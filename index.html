@@ -14,6 +14,9 @@
     <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <!-- CSS -->
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -48,6 +51,11 @@
             
             <div class="form-container">
                 <div class="form-group">
+                    <label for="host-name">Seu Nome</label>
+                    <input type="text" id="host-name" placeholder="Como devemos te chamar?" maxlength="20">
+                </div>
+
+                <div class="form-group">
                     <label for="room-name">Nome da Sala</label>
                     <input type="text" id="room-name" placeholder="Ex: Sala dos Horrores" maxlength="30">
                 </div>
@@ -65,6 +73,15 @@
                     <div class="col">
                         <label for="max-players">Máx. Jogadores</label>
                         <input type="number" id="max-players" value="10" min="3" max="20">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Regras da Casa</label>
+                    <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.5rem;">
+                        <label style="font-weight:normal; cursor:pointer;"><input type="checkbox" id="rule-rando" value="1"> Rando Cardrissian (O jogo joga uma carta aleatória toda rodada)</label>
+                        <label style="font-weight:normal; cursor:pointer;"><input type="checkbox" id="rule-embalagem" value="1"> Calor de Embalagem (Compra carta extra em Pick 2 e Pick 3)</label>
+                        <label style="font-weight:normal; cursor:pointer;"><input type="checkbox" id="rule-eununca" value="1"> Eu Nunca (Permite trocar uma carta por rodada admitindo ignorância)</label>
                     </div>
                 </div>
 
@@ -127,8 +144,9 @@
                     <h3>Código da Sala</h3>
                     <div class="room-code-display">
                         <span id="lobby-room-id" class="code">------</span>
-                        <button id="btn-copy-code" class="btn-icon" title="Copiar código">📋</button>
+                        <button id="btn-copy-code" class="btn-icon" title="Copiar Link">🔗 Link</button>
                     </div>
+                    <div id="qrcode-container" style="display:flex; justify-content:center; margin-bottom: 1rem; background: white; padding: 10px; border-radius: 8px; width: fit-content; margin-left: auto; margin-right: auto;"></div>
                     <p class="room-status">Esperando jogadores...</p>
                 </div>
                 
@@ -196,7 +214,8 @@
                     <div id="player-hand" class="cards-row">
                         <!-- Cartas brancas na mão do jogador -->
                     </div>
-                    <div class="hand-actions">
+                    <div class="hand-actions" style="display:flex; justify-content:space-between; align-items:center;">
+                        <button id="btn-eu-nunca" class="btn btn-secondary btn-small" style="display: none;">Eu Nunca (Trocar Carta)</button>
                         <button id="btn-play-cards" class="btn btn-primary" disabled>Jogar Cartas Selecionadas</button>
                     </div>
                 </div>

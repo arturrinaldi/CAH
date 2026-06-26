@@ -83,8 +83,9 @@ const CAHUI = (function() {
 
     document.getElementById('btn-copy-code').addEventListener('click', () => {
         const code = document.getElementById('lobby-room-id').textContent;
-        navigator.clipboard.writeText(code).then(() => {
-            showToast("Código copiado!");
+        const joinUrl = window.location.origin + window.location.pathname + '?room=' + code;
+        navigator.clipboard.writeText(joinUrl).then(() => {
+            showToast("Link copiado!");
         });
     });
 
@@ -156,7 +157,20 @@ const CAHUI = (function() {
             // Disable hand
             document.querySelectorAll('#player-hand .card').forEach(c => c.classList.add('disabled'));
             document.getElementById('btn-play-cards').disabled = true;
+            document.getElementById('btn-eu-nunca').style.display = 'none';
             document.getElementById('hand-instructions').textContent = "Aguardando outros jogadores...";
+        }
+    });
+
+    document.getElementById('btn-eu-nunca').addEventListener('click', () => {
+        if (selectedHandCards.length === 1) {
+            const index = parseInt(selectedHandCards[0].index);
+            CAHGame.euNuncaTrade(index);
+            selectedHandCards = [];
+            document.getElementById('btn-play-cards').disabled = true;
+            document.getElementById('btn-eu-nunca').style.display = 'none';
+        } else {
+            showToast("Selecione EXATAMENTE UMA carta para trocar!", "error");
         }
     });
 

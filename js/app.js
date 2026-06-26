@@ -14,6 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initApp() {
+    // Check URL for room code
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get('room');
+    if (roomCode) {
+        document.getElementById('join-room-id').value = roomCode;
+        showScreen('screen-join');
+    }
+
     // Navigation handling
     document.getElementById('btn-show-create').addEventListener('click', () => {
         showScreen('screen-create');
@@ -58,6 +66,14 @@ function setupCreateRoom() {
         const password = document.getElementById('room-password').value.trim();
         const maxScore = parseInt(document.getElementById('max-score').value) || 7;
         const maxPlayers = parseInt(document.getElementById('max-players').value) || 10;
+        const playerName = document.getElementById('host-name').value.trim() || 'Host';
+        
+        // Regras da casa
+        const rules = {
+            rando: document.getElementById('rule-rando').checked,
+            embalagem: document.getElementById('rule-embalagem').checked,
+            euNunca: document.getElementById('rule-eununca').checked
+        };
         
         // Get selected packs
         const selectedPacks = [];
@@ -70,8 +86,6 @@ function setupCreateRoom() {
             return;
         }
 
-        const playerName = prompt("Como devemos te chamar (Host)?") || "Host";
-        
         CAH.state.isHost = true;
         CAH.state.playerName = playerName;
         CAH.state.room = {
@@ -79,7 +93,8 @@ function setupCreateRoom() {
             password: password,
             maxScore: maxScore,
             maxPlayers: maxPlayers,
-            selectedPacks: selectedPacks
+            selectedPacks: selectedPacks,
+            rules: rules
         };
 
         // Initialize Peer as Host
@@ -89,6 +104,15 @@ function setupCreateRoom() {
             document.getElementById('lobby-max-players').textContent = maxPlayers;
             document.getElementById('btn-start-game').style.display = 'block';
             document.getElementById('waiting-host-msg').style.display = 'none';
+            
+            // Gerar QR Code
+            const joinUrl = window.location.origin + window.location.pathname + '?room=' + roomId;
+            document.getElementById('qrcode-container').innerHTML = '';
+            new QRCode(document.getElementById('qrcode-container'), {
+                text: joinUrl,
+                width: 150,
+                height: 150
+            });
             
             CAHUI.updateLobbyPlayers([{ id: CAHNetwork.peerId, name: playerName, isHost: true }]);
             showScreen('screen-lobby');
